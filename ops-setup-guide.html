@@ -1,0 +1,1484 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenMontage 运维设置指南</title>
+<style>
+:root{
+--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--line:#2b3648;
+--txt:#dce3ec;--dim:#7d8a9c;--acc:#4da3ff;--ok:#3fb950;--warn:#d29922;--bad:#f85149;
+--chip:#22304a;--chipT:#9ec5ff;--mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.55 -apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;padding:24px 32px 64px}
+a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+h1{font-size:22px;font-weight:650}
+.snap{color:var(--dim);font-size:12px}
+h2{font-size:16px;margin:34px 0 12px;color:#eaf1fa;letter-spacing:.02em}
+h3{font-size:14px;margin:18px 0 8px} h3 small{color:var(--dim);font-weight:400;margin-left:8px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi .v{font-size:26px;font-weight:700;font-family:var(--mono)}
+.kpi .l{color:var(--dim);font-size:12px;margin-top:4px}
+.kpi.vendor .v{color:var(--warn)} .kpi.api .v{color:var(--bad)}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;border:1px solid}
+.pill.ok{color:var(--ok);border-color:#2e5c36;background:#12261a}
+.pill.no{color:var(--bad);border-color:#5c2e2e;background:#26121a}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{background:var(--panel2);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);padding:9px 12px}
+td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+tr:hover td{background:#1a2230}
+.num{font-family:var(--mono);text-align:right;white-space:nowrap} .num.big{font-size:16px}
+.dim{color:var(--dim)}
+.bar{background:#0a0e14;border-radius:99px;height:9px;min-width:90px;overflow:hidden}
+.bar-i{height:100%;border-radius:99px}
+.bar-i.full{background:var(--ok)} .bar-i.partial{background:var(--warn)} .bar-i.dead{background:var(--bad)}
+.chip{display:inline-block;background:var(--chip);color:var(--chipT);border-radius:6px;padding:1px 8px;margin:1px 2px;font-family:var(--mono);font-size:11.5px;border:1px solid #33456a}
+.chip.green{background:#16301f;color:#7ee29b;border-color:#2e5c36}
+.chip.more{background:transparent;color:var(--dim)}
+.dep{display:inline-block;background:#2a2313;color:#e0b25a;border:1px solid #5a4a1e;border-radius:6px;padding:0 7px;margin:1px 2px;font-family:var(--mono);font-size:11.5px}
+.tag{display:inline-block;border-radius:6px;padding:1px 8px;font-size:11px;font-family:var(--mono)}
+.tag.on{background:#12261a;color:var(--ok);border:1px solid #2e5c36}
+.tag.off{background:#26121a;color:#var(--bad,#f85149);color:var(--bad);border:1px solid #5c2e2e}
+.tname{font-family:var(--mono);font-size:12.5px}
+.rt{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line);padding:1px 7px;border-radius:6px}
+.inst{color:#cdd6e2;font-size:12.5px;max-width:520px}
+.row-ok td{opacity:.72}
+.det{margin-top:22px}
+details summary{color:var(--acc);cursor:pointer;font-size:12px;user-select:none}
+details ul{margin:8px 0 2px 18px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+code,pre{font-family:var(--mono);font-size:12.5px}
+code{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+pre{background:#0a0e14;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:8px 0;white-space:pre}
+pre .c{color:var(--dim)} pre .k{color:var(--acc)} pre .g{color:var(--ok)} .c-{color:var(--dim)}
+.callout{background:var(--panel);border-left:3px solid var(--warn);border-radius:8px;padding:13px 16px;margin:14px 0}
+.callout.bad{border-color:var(--bad)} .callout.good{border-color:var(--ok)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:15px 17px}
+.card h4{font-size:13px;margin-bottom:8px}
+ol.steps{margin:8px 0 0 20px} ol.steps li{margin:6px 0}
+footer{margin-top:48px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+@media print{body{background:#fff;color:#111}.bar-i{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<header>
+<h1>OpenMontage 运维设置指南</h1>
+<span class="snap">快照 2026-10-29 16:23 · 单文件离线版 · 数据源 tools.tool_registry 实时探活</span>
+</header>
+<div>
+<span class="pill ok">运行时 全部就绪 (python venv / Node v22 / FFmpeg 6.1.1)</span>
+&nbsp;
+<span class="pill no">API 凭据 全部为空 — 这是唯一瓶颈</span>
+</div>
+
+<h2>1. 记分卡 — 26 个能力域</h2>
+<div class="grid4">
+<div class="kpi"><div class="v">41<span style="color:var(--dim);font-size:16px">/151</span></div><div class="l">provider 就绪（含本地与多路由）</div></div>
+<div class="kpi vendor"><div class="v">53</div><div class="l">provider 等待 API key 解锁</div></div>
+<div class="kpi api"><div class="v">46</div><div class="l">本地/免费组件待装（无 key 门槛）</div></div>
+<div class="kpi"><div class="v">3</div><div class="l">合成引擎在线：HyperFrames / Remotion / FFmpeg</div></div>
+</div>
+<div class="callout bad"><b>根因：</b>项目 <code>.env</code> 里 43 个密钥变量名全部存在、<u>值全为空字符串</u>。补值即可批量解锁，无需改代码。</div>
+<table>
+<thead><tr><th>能力域</th><th style="text-align:right">就绪</th><th style="text-align:right">/ 共</th><th>进度</th><th>解锁 key</th></tr></thead>
+<tbody><tr>
+<td class="cap">image_generation</td>
+<td class="num">2</td><td class="num dim">/29</td>
+<td><div class="bar"><div class="bar-i partial" style="width:7%"></div></div></td>
+<td class="keys"><span class="chip">ATLASCLOUD_API_KEY</span><span class="chip">BFL_API_KEY</span><span class="chip">BRIA_API_TOKEN</span><span class="chip">FAL_KEY</span><span class="chip more">+8</span></td>
+</tr><tr>
+<td class="cap">enhancement</td>
+<td class="num">2</td><td class="num dim">/6</td>
+<td><div class="bar"><div class="bar-i partial" style="width:33%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">music_search</td>
+<td class="num">1</td><td class="num dim">/2</td>
+<td><div class="bar"><div class="bar-i partial" style="width:50%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">analysis</td>
+<td class="num">8</td><td class="num dim">/14</td>
+<td><div class="bar"><div class="bar-i partial" style="width:57%"></div></div></td>
+<td class="keys"><span class="chip">MISTRAL_API_KEY</span></td>
+</tr><tr>
+<td class="cap">graphics</td>
+<td class="num">2</td><td class="num dim">/3</td>
+<td><div class="bar"><div class="bar-i partial" style="width:67%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">video_post</td>
+<td class="num">9</td><td class="num dim">/10</td>
+<td><div class="bar"><div class="bar-i partial" style="width:90%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">3d_asset_acquisition</td>
+<td class="num">1</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">3d_world_generation</td>
+<td class="num">1</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">audio_processing</td>
+<td class="num">2</td><td class="num dim">/2</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">character_animation</td>
+<td class="num">6</td><td class="num dim">/6</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">clip_acquisition</td>
+<td class="num">1</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">clip_retrieval</td>
+<td class="num">1</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">publish</td>
+<td class="num">1</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">screen_capture</td>
+<td class="num">2</td><td class="num dim">/2</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">subtitle</td>
+<td class="num">2</td><td class="num dim">/2</td>
+<td><div class="bar"><div class="bar-i full" style="width:100%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">3d_asset_generation</td>
+<td class="num">0</td><td class="num dim">/2</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="chip">ATLASCLOUD_API_KEY</span><span class="chip">FAL_KEY</span></td>
+</tr><tr>
+<td class="cap">3d_world_rendering</td>
+<td class="num">0</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">avatar</td>
+<td class="num">0</td><td class="num dim">/5</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="chip">HEYGEN_API_KEY</span><span class="chip">KLING_API_KEY</span></td>
+</tr><tr>
+<td class="cap">corpus_population</td>
+<td class="num">0</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">music_generation</td>
+<td class="num">0</td><td class="num dim">/6</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="chip">ELEVENLABS_API_KEY</span><span class="chip">FAL_KEY</span></td>
+</tr><tr>
+<td class="cap">music_library</td>
+<td class="num">0</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">realtime_audio</td>
+<td class="num">0</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">source_ingest</td>
+<td class="num">0</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="dim">-</span></td>
+</tr><tr>
+<td class="cap">tts</td>
+<td class="num">0</td><td class="num dim">/18</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="chip">CARTESIA_API_KEY</span><span class="chip">FAL_KEY</span><span class="chip">FISH_AUDIO_API_KEY</span><span class="chip">HEYGEN_API_KEY</span><span class="chip more">+4</span></td>
+</tr><tr>
+<td class="cap">video_generation</td>
+<td class="num">0</td><td class="num dim">/33</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="chip">ARK_API_KEY</span><span class="chip">ATLASCLOUD_API_KEY</span><span class="chip">FAL_KEY</span><span class="chip">KLING_API_KEY</span><span class="chip more">+6</span></td>
+</tr><tr>
+<td class="cap">voice_conversion</td>
+<td class="num">0</td><td class="num dim">/1</td>
+<td><div class="bar"><div class="bar-i dead" style="width:0%"></div></div></td>
+<td class="keys"><span class="chip">HEYGEN_API_KEY</span></td>
+</tr></tbody>
+</table>
+
+<h2>2. 一个 key 解开几个锁 — 优先级排序</h2>
+<p>按"填一个变量解锁多少 provider"排序。填完前三行，主力视频/图像/音乐/TTS 路径即全部上线。</p>
+<table>
+<thead><tr><th>环境变量</th><th style="text-align:right">解锁</th><th>覆盖能力域</th></tr></thead>
+<tbody>
+<tr><td><span class="chip">FAL_KEY</span></td><td class="num big">15</td><td>image / video / music / tts / 3d（单一网关，覆盖面最大，<b>强烈建议第一个填</b>）</td></tr>
+<tr><td><span class="chip">ATLASCLOUD_API_KEY</span></td><td class="num big">5</td>
+<td>3d_asset_generation,image_generation,video_generation</td></tr><tr><td><span class="chip">KLING_API_KEY</span></td><td class="num big">5</td>
+<td>avatar,image_generation,tts,video_generation</td></tr><tr><td><span class="chip">HEYGEN_API_KEY</span></td><td class="num big">4</td>
+<td>avatar,tts,voice_conversion</td></tr><tr><td><span class="chip">REPLICATE_API_TOKEN</span></td><td class="num big">3</td>
+<td>image_generation,video_generation</td></tr><tr><td><span class="chip">MISTRAL_API_KEY</span></td><td class="num big">2</td>
+<td>analysis,tts</td></tr><tr><td><span class="chip">TENCENT_TOKENHUB_API_KEY</span></td><td class="num big">2</td>
+<td>image_generation,video_generation</td></tr><tr><td><span class="chip">MINIMAX_API_KEY</span></td><td class="num big">2</td>
+<td>image_generation,video_generation</td></tr><tr><td><span class="chip">BFL_API_KEY</span></td><td class="num big">1</td>
+<td>image_generation</td></tr><tr><td><span class="chip">BRIA_API_TOKEN</span></td><td class="num big">1</td>
+<td>image_generation</td></tr><tr><td><span class="chip">IDEOGRAM_API_KEY</span></td><td class="num big">1</td>
+<td>image_generation</td></tr><tr><td><span class="chip">MAI_API_KEY</span></td><td class="num big">1</td>
+<td>image_generation</td></tr><tr><td><span class="chip">MAI_IMAGE_DEPLOYMENT</span></td><td class="num big">1</td>
+<td>image_generation</td></tr><tr><td><span class="chip">MAI_ENDPOINT</span></td><td class="num big">1</td>
+<td>image_generation</td></tr><tr><td><span class="chip">ELEVENLABS_API_KEY</span></td><td class="num big">1</td>
+<td>music_generation</td></tr><tr><td><span class="chip">CARTESIA_API_KEY</span></td><td class="num big">1</td>
+<td>tts</td></tr><tr><td><span class="chip">FISH_AUDIO_API_KEY</span></td><td class="num big">1</td>
+<td>tts</td></tr><tr><td><span class="chip">XAI_API_KEY</span></td><td class="num big">1</td>
+<td>tts</td></tr><tr><td><span class="chip">INWORLD_API_KEY</span></td><td class="num big">1</td>
+<td>tts</td></tr><tr><td><span class="chip">ARK_API_KEY</span></td><td class="num big">1</td>
+<td>video_generation</td></tr><tr><td><span class="chip">LTX_API_KEY</span></td><td class="num big">1</td>
+<td>video_generation</td></tr><tr><td><span class="chip">VOLC_SECRETKEY</span></td><td class="num big">1</td>
+<td>video_generation</td></tr><tr><td><span class="chip">VOLC_ACCESSKEY</span></td><td class="num big">1</td>
+<td>video_generation</td></tr>
+</tbody></table>
+
+<div class="cols">
+<div class="card">
+<h4>无 key 路线（0 元）</h4>
+<ol class="steps">
+<li>本机硬件：NVIDIA GB10 + 121 GB 内存 + 20 核。</li>
+<li>本地视频：设 <code>VIDEO_GEN_LOCAL_ENABLED=true</code> + 安装 diffusers 栈，直接通 <code>wan_video</code> / <code>ltx_video_local</code> / <code>cogvideo_video</code> / <code>hunyuan_video</code>。</li>
+<li>开源图库 <code>PEXELS_API_KEY</code> / <code>PIXABAY_API_KEY</code> 免费注册。</li>
+<li>本地音乐目录：项目根建 <code>music_library/</code> 放入免版权音频即可用。</li>
+</ol>
+</div>
+<div class="card">
+<h4>本地环境缺失组件（非 API）</h4>
+<table style="box-shadow:none"><tbody><tr><td><span class="chip green">cmd:ffmpeg</span></td>
+<td class="num big">5</td>
+<td>analysis,avatar,enhancement,video_post</td>
+</tr><tr><td><span class="chip green">python:torch</span></td>
+<td class="num big">4</td>
+<td>avatar,corpus_population,enhancement</td>
+</tr><tr><td><span class="chip green">python:PIL</span></td>
+<td class="num big">2</td>
+<td>corpus_population,enhancement</td>
+</tr><tr><td><span class="chip green">python:faster_whisper</span></td>
+<td class="num big">1</td>
+<td>analysis</td>
+</tr><tr><td><span class="chip green">python:youtube_transcript_api</span></td>
+<td class="num big">1</td>
+<td>analysis</td>
+</tr><tr><td><span class="chip green">python:numpy</span></td>
+<td class="num big">1</td>
+<td>corpus_population</td>
+</tr><tr><td><span class="chip green">python:requests</span></td>
+<td class="num big">1</td>
+<td>corpus_population</td>
+</tr><tr><td><span class="chip green">python:transformers</span></td>
+<td class="num big">1</td>
+<td>corpus_population</td>
+</tr></tbody></table>
+</div>
+</div>
+
+<h2>3. 推荐路线（按预算三档）</h2>
+<div class="cols">
+<div class="card"><h4>最小集（成本 ≈ $0 起步，覆盖主力路径）</h4>
+<pre><b>FAL_KEY</b>=
+<b>ELEVENLABS_API_KEY</b>=
+<b>GOOGLE_API_KEY</b>=   <span class="c"># aistudio.google.com/apikey</span></pre>
+解锁：图像 9+ / 视频 10+ / 音乐 3 / TTS 2 以上。workflow 001/002 全链路可用。</div>
+<div class="card"><h4>扩展（可灵官方 + Runway + 即梦）</h4>
+<pre><b>KLING_API_KEY</b>=
+<b>RUNWAY_API_KEY</b>=
+<b>VOLC_ACCESSKEY</b>=
+<b>VOLC_SECRETKEY</b>=
+<b>MINIMAX_API_KEY</b>=
+<b>HIGGSFIELD_API_KEY</b>=
+<b>HIGGSFIELD_API_SECRET</b>=</pre></div>
+<div class="card"><h4>纯本地 GPU（不花一分钱）</h4>
+<pre><span class="c"># 1. 开本地视频生成</span>
+VIDEO_GEN_LOCAL_ENABLED=true
+<b>VIDEO_GEN_LOCAL_MODEL</b>=wan2.2
+
+<span class="c"># 2. 在 .venv 内装 diffusers 栈（首次下载模型较慢）</span>
+.venv/bin/pip install diffusers transformers accelerate torch pillow requests
+
+<span class="c"># 3. 验证</span>
+.venv/bin/python -c "import tools.tool_registry as r; r.registry.discover(); print('ok')"</pre>
+</div>
+</div>
+
+<h2>4. 写入 .env 的正确姿势</h2>
+<pre><span class="c"># .env 明文 key=value，无需 source；每次新终端由入口自动加载</span>
+<span class="k">FAL_KEY</span>=fal-xxxxxxxxxxxxxxxx
+<span class="k">KLING_API_KEY</span>=kling-xxxx
+<span class="k">SUNO_API_KEY</span>=suno_xxxx
+<span class="c"># 腾讯云 variables 走 export 时同样支持；优先 .env，同样两者都在时 .env 覆盖 env</span>
+<span class="k">TENCENT_TOKENHUB_API_KEY</span>=tk-xxx</pre>
+<div class="callout">修改 <code>.env</code> 后无需重启服务层——<b>新开会话/新进程</b>即读到新值。验证命令见下节。</div>
+
+<h2>5. 验证命令（每次配置后必跑）</h2>
+<pre><span class="c"># 环境健康（标准入口，一条命令出三段报告）</span>
+scripts/preflight.sh
+
+<span class="c"># 能力记分卡 JSON（确认解锁数上升）</span>
+.venv/bin/python -c <span class="k">"import tools.tool_registry as r; r.registry.discover(); print(r.provider_menu_summary())"</span>
+
+<span class="c"># 单 provider 探活（示例：可灵官方视频）</span>
+.venv/bin/python -c <span class="k">"import tools.kling_official_video as m; t=m.KlingOfficialVideo(); i=t.get_info(); print(i['status'], i.get('missing_dependencies'))"</span>
+
+<span class="c"># 端到端冒烟：生成 5s 视频 + 字幕 + 合成</span>
+.venv/bin/python -m engines.run pipeline --video kling --duration 5s</pre>
+<div class="callout good"><b>规则：</b>所有验证只用 <code>.venv/bin/python</code> / <code>scripts/preflight.sh</code>。系统 <code>python3</code> 缺依赖，永远不要用。出现 <code>_ALL_MUST_FAIL</code> 前缀的码 = 配置错误，按对应 tool 的 <code>install_instructions</code> 修。</div>
+
+<h2>6. 全量能力域明细（26 段 · ready / need setup）</h2>
+<section class="det" id="cap-3d_asset_acquisition">
+<h3>3d_asset_acquisition <small>1/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">threejs_asset_catalog</td>
+<td>multi</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">hybrid</td>
+</tr></tbody></table></section><section class="det" id="cap-3d_world_generation">
+<h3>3d_world_generation <small>1/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">threejs_world</td>
+<td>threejs</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-analysis">
+<h3>analysis <small>8/14 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">audio_energy</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">frame_sampler</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">scene_detect</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">visual_qa</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">audio_probe</td>
+<td>ffprobe</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">composition_validator</td>
+<td>local</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">video_analyzer</td>
+<td>multi</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">video_understand</td>
+<td>transformers</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local_gpu</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">azure_stt</td>
+<td>azure</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set your Azure AI Speech credentials: export AZURE_SPEECH_KEY=your_speech_resource_key export AZURE_SPEECH_REGION=eastus # your Speech resource region Create a</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">dashscope_asr</td>
+<td>dashscope</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set DASHSCOPE_API_KEY to your Alibaba Cloud DashScope API key. Get one at https://dashscope.aliyun.com/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">face_tracker</td>
+<td>mediapipe</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">cmd:ffmpeg</span></td>
+<td class="inst">For best results install MediaPipe: pip install mediapipe opencv-python Falls back to OpenCV Haar cascade (ships with opencv-python).</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">mistral_stt</td>
+<td>mistral</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:MISTRAL_API_KEY</span></td>
+<td class="inst">Configure MISTRAL_API_KEY from https://console.mistral.ai/.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">transcriber</td>
+<td>whisperx</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:faster_whisper</span></td>
+<td class="inst">pip install faster-whisper # CPU mode pip install faster-whisper[gpu] # GPU mode (requires CUDA) pip install whisperx # For diarization support</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">transcript_fetcher</td>
+<td>youtube-transcript-api</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:youtube_transcript_api</span></td>
+<td class="inst">Install youtube-transcript-api: pip install youtube-transcript-api</td>
+</tr></tbody></table></section><section class="det" id="cap-audio_processing">
+<h3>audio_processing <small>2/2 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">audio_enhance</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">audio_mixer</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-character_animation">
+<h3>character_animation <small>6/6 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">action_timeline_compiler</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">character_animation_reviewer</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">character_rig_renderer</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">character_spec_generator</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">pose_library_builder</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">svg_rig_builder</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-clip_acquisition">
+<h3>clip_acquisition <small>1/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">direct_clip_search</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">hybrid</td>
+</tr></tbody></table></section><section class="det" id="cap-clip_retrieval">
+<h3>clip_retrieval <small>1/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">clip_search</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-enhancement">
+<h3>enhancement <small>2/6 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">color_grade</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">face_enhance</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">face_restore</td>
+<td>codeformer</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:gfpgan</span><span class="dep">python:torch</span></td>
+<td class="inst">uv pip install gfpgan torch Works on: CUDA (NVIDIA), MPS (Apple Silicon M-series, macOS &gt;= 12.3), CPU fallback. No CUDA build needed on macOS — uv pip install t</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">eye_enhance</td>
+<td>mediapipe</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">cmd:ffmpeg</span></td>
+<td class="inst">For best results install MediaPipe and OpenCV: pip install mediapipe opencv-python numpy Without MediaPipe, falls back to FFmpeg eye-region filter (less precise</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">upscale</td>
+<td>realesrgan</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:realesrgan</span><span class="dep">python:torch</span><span class="dep">cmd:ffmpeg</span></td>
+<td class="inst">uv pip install realesrgan torch Works on: CUDA (NVIDIA), MPS (Apple Silicon M-series, macOS &gt;= 12.3), CPU fallback. No separate CUDA build needed on macOS — uv</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">bg_remove</td>
+<td>rembg</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:rembg</span><span class="dep">python:PIL</span></td>
+<td class="inst">pip install rembg # CPU mode pip install rembg[gpu] # GPU mode (requires CUDA + onnxruntime-gpu)</td>
+</tr></tbody></table></section><section class="det" id="cap-graphics">
+<h3>graphics <small>2/3 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">diagram_gen</td>
+<td>mermaid</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">code_snippet</td>
+<td>pygments</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">math_animate</td>
+<td>manim</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">cmd:manim</span></td>
+<td class="inst">Install ManimCE: pip install manim manim checkhealth Requires: Python 3.8+, FFmpeg, LaTeX (optional, for math formulas) Windows: choco install miktex ffmpeg mac</td>
+</tr></tbody></table></section><section class="det" id="cap-image_generation">
+<h3>image_generation <small>2/29 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">local_diffusion</td>
+<td>local_diffusion</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local_gpu</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">image_gen</td>
+<td>multi</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">hybrid</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">atlas_image</td>
+<td>atlascloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ATLASCLOUD_API_KEY</span></td>
+<td class="inst">Set ATLASCLOUD_API_KEY to your Atlas Cloud API key. Get one at https://www.atlascloud.ai/ -&gt; Dashboard -&gt; API Keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">atlas_refresh_image</td>
+<td>atlascloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ATLASCLOUD_API_KEY</span></td>
+<td class="inst">Configure ATLASCLOUD_API_KEY.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">bfl_image</td>
+<td>bfl</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:BFL_API_KEY</span></td>
+<td class="inst">Configure BFL_API_KEY from https://dashboard.bfl.ai/.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">bria_image</td>
+<td>bria</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:BRIA_API_TOKEN</span></td>
+<td class="inst">Configure BRIA_API_TOKEN from https://platform.bria.ai/.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">seedream_image</td>
+<td>bytedance</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Set FAL_KEY to your fal.ai API key. Get one at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">comfyui_image</td>
+<td>comfyui</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Start a ComfyUI server and set COMFYUI_SERVER_URL (default http://localhost:8188). See https://github.com/comfyanonymous/ComfyUI for setup. Running a separate C</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">dashscope_image</td>
+<td>dashscope</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set DASHSCOPE_API_KEY to your Alibaba Cloud DashScope API key. Get one at https://dashscope.aliyun.com/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">bria_fal_image</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">flux3_fal_image</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">gemini_fal_image</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">ideogram_fal_image</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">openai_fal_image</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">flux_image</td>
+<td>flux</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set FAL_KEY to your fal.ai API key. Get one at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">google_imagen</td>
+<td>google_imagen</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Auth option A — API key (AI Studio): set GOOGLE_API_KEY (or GEMINI_API_KEY). Get one at https://aistudio.google.com/apikey Auth option B — service account (Vert</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">grok_image</td>
+<td>grok</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set XAI_API_KEY to your xAI API key. Get one from the xAI developer console</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">hunyuan_image</td>
+<td>hunyuan_cloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:TENCENT_TOKENHUB_API_KEY</span></td>
+<td class="inst">Set TENCENT_TOKENHUB_API_KEY to your Tencent Cloud TokenHub API key. Get it at https://console.cloud.tencent.com/tokenhub</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">ideogram_image</td>
+<td>ideogram</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:IDEOGRAM_API_KEY</span></td>
+<td class="inst">Configure IDEOGRAM_API_KEY.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">kling_official_image</td>
+<td>kling_official</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:KLING_API_KEY</span></td>
+<td class="inst">Set KLING_API_KEY in .env for the official Kling API. Optionally set KLING_API_BASE_URL to override the default Singapore endpoint.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">mai_image</td>
+<td>microsoft_mai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:MAI_API_KEY</span><span class="dep">env:MAI_ENDPOINT</span><span class="dep">env:MAI_IMAGE_DEPLOYMENT</span></td>
+<td class="inst">Configure MAI_API_KEY, MAI_ENDPOINT (Foundry resource HTTPS origin), MAI_IMAGE_DEPLOYMENT and MAI_IMAGE_MODEL (MAI-Image-2.6 or MAI-Image-2.6-Flash).</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">minimax_image</td>
+<td>minimax</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:MINIMAX_API_KEY</span></td>
+<td class="inst">Set MINIMAX_API_KEY to your MiniMax API key. Optionally set MINIMAX_REGION to global or cn.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">openai_image</td>
+<td>openai</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set OPENAI_API_KEY to your OpenAI API key. pip install openai</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">pexels_image</td>
+<td>pexels</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set PEXELS_API_KEY to your Pexels API key. Get one free at https://www.pexels.com/api/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">pixabay_image</td>
+<td>pixabay</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set PIXABAY_API_KEY to your Pixabay API key. Get one free at https://pixabay.com/api/docs/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">qwen_image_21</td>
+<td>qwen_local</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Install Diffusers with QwenImage21Pipeline, torch, transformers &gt;=5.17, accelerate and Pillow. Download Qwen/Qwen-Image-2.1 separately and set QWEN_IMAGE_21_PAT</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">recraft_image</td>
+<td>recraft</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set FAL_KEY to your fal.ai API key. Get one at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">flux3_replicate_image</td>
+<td>replicate</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:REPLICATE_API_TOKEN</span></td>
+<td class="inst">Configure REPLICATE_API_TOKEN.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">gemini_replicate_image</td>
+<td>replicate</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:REPLICATE_API_TOKEN</span></td>
+<td class="inst">Configure REPLICATE_API_TOKEN.</td>
+</tr></tbody></table></section><section class="det" id="cap-music_search">
+<h3>music_search <small>1/2 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">pixabay_music</td>
+<td>pixabay_music</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">api</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">freesound_music</td>
+<td>freesound</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the FREESOUND_API_KEY environment variable: export FREESOUND_API_KEY=your_key_here Get a free key at https://freesound.org/apiv2/apply/</td>
+</tr></tbody></table></section><section class="det" id="cap-publish">
+<h3>publish <small>1/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">export_bundle</td>
+<td>local</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-screen_capture">
+<h3>screen_capture <small>2/2 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">cap_recorder</td>
+<td>cap</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">screen_recorder</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-subtitle">
+<h3>subtitle <small>2/2 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">subtitle_gen</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">remotion_caption_burn</td>
+<td>remotion</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr></tbody></table></section><section class="det" id="cap-video_post">
+<h3>video_post <small>9/10 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">auto_reframe</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">green_screen_composite</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">green_screen_processor</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">showcase_card</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">silence_cutter</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">video_compose</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">video_stitch</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">video_trimmer</td>
+<td>ffmpeg</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="row-ok">
+<td><span class="tag on">ready</span></td>
+<td class="tname">hyperframes_compose</td>
+<td>hyperframes</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">local</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">bgm_montage_lite</td>
+<td>bmts-lite</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">cmd:ffmpeg</span><span class="dep">cmd:ffprobe</span></td>
+<td class="inst">Clone https://github.com/sharbvane/BMTS-Lite, create an isolated Python 3.11 environment, and install its requirements-runtime.txt. Set BGM_MONTAGE_LITE_ROOT to</td>
+</tr></tbody></table></section><section class="det" id="cap-3d_asset_generation">
+<h3>3d_asset_generation <small>0/2 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">atlas_3d</td>
+<td>atlas_cloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ATLASCLOUD_API_KEY</span></td>
+<td class="inst">Set ATLASCLOUD_API_KEY (ATLAS_CLOUD_API_KEY and ATLAS_API_KEY are also accepted). Create a key at https://www.atlascloud.ai/.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">fal_3d</td>
+<td>fal</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Set FAL_KEY (or FAL_AI_API_KEY). Create a key at https://fal.ai/dashboard/keys.</td>
+</tr></tbody></table></section><section class="det" id="cap-3d_world_rendering">
+<h3>3d_world_rendering <small>0/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">blender_world</td>
+<td>blender</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Install Blender 4.5 LTS, set BLENDER_PATH, or place the portable runtime at .runtime/blender/blender-4.5.10-windows-x64/blender.exe.</td>
+</tr></tbody></table></section><section class="det" id="cap-avatar">
+<h3>avatar <small>0/5 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">heygen_avatar</td>
+<td>heygen</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:HEYGEN_API_KEY</span></td>
+<td class="inst">Configure HEYGEN_API_KEY from your HeyGen API account.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">kling_avatar</td>
+<td>kling_official</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:KLING_API_KEY</span></td>
+<td class="inst">Set KLING_API_KEY in .env for the official Kling API. Provide an avatar image plus either audio_id or sound_file/audio_path.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">kling_lip_sync</td>
+<td>kling_official</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:KLING_API_KEY</span></td>
+<td class="inst">Set KLING_API_KEY in .env for the official Kling API. Use identify_face first for multi-person clips, then pass face_choose or face_id.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">talking_head</td>
+<td>sadtalker</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Clone https://github.com/OpenTalker/SadTalker and set SADTALKER_PATH env var Requires: PyTorch with CUDA, ffmpeg pip install sadtalker # or clone the repo</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">lip_sync</td>
+<td>wav2lip</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:torch</span><span class="dep">cmd:ffmpeg</span></td>
+<td class="inst">Option 1: pip install wav2lip (if available) Option 2: Clone https://github.com/Rudrabha/Wav2Lip and set WAV2LIP_PATH env var Requires: PyTorch with CUDA, ffmpe</td>
+</tr></tbody></table></section><section class="det" id="cap-corpus_population">
+<h3>corpus_population <small>0/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">corpus_builder</td>
+<td>openmontage</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:cv2</span><span class="dep">python:numpy</span><span class="dep">python:requests</span><span class="dep">python:PIL</span><span class="dep">python:transformers</span><span class="dep">python:torch</span></td>
+<td class="inst">pip install opencv-python numpy requests pillow transformers torch At least one stock source must be configured: PEXELS_API_KEY for Pexels (free at https://www.</td>
+</tr></tbody></table></section><section class="det" id="cap-music_generation">
+<h3>music_generation <small>0/6 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">comfyui_music</td>
+<td>comfyui</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Start a ComfyUI server and set COMFYUI_SERVER_URL (default http://localhost:8188). Requires ace_step_v1_3.5b.safetensors in ComfyUI&#x27;s checkpoints directory for</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">elevenlabs_soundtrack</td>
+<td>elevenlabs</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ELEVENLABS_API_KEY</span></td>
+<td class="inst">Configure ELEVENLABS_API_KEY with video-to-music access.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">music_gen</td>
+<td>elevenlabs</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the ELEVENLABS_API_KEY environment variable: export ELEVENLABS_API_KEY=your_key_here Get a key at https://elevenlabs.io</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">fal_elevenlabs_music</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Set FAL_KEY to a fal.ai API key. Get one at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">google_music</td>
+<td>google</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Configure Google credentials: - Set GEMINI_API_KEY (or GOOGLE_API_KEY) in environment. - Or set GOOGLE_APPLICATION_CREDENTIALS for Vertex AI service account.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">suno_music</td>
+<td>suno</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the SUNO_API_KEY environment variable: export SUNO_API_KEY=your_key_here Get a key at https://sunoapi.org/api-key</td>
+</tr></tbody></table></section><section class="det" id="cap-music_library">
+<h3>music_library <small>0/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">music_library</td>
+<td>local</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Create a &#x27;music_library/&#x27; folder in the project root and drop royalty-free audio tracks into it (e.g. .mp3, .wav, .m4a, .flac, .ogg). Sources: your own files, Y</td>
+</tr></tbody></table></section><section class="det" id="cap-realtime_audio">
+<h3>realtime_audio <small>0/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">realtime_audio</td>
+<td>realtime_audio</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:websockets</span></td>
+<td class="inst">Configure XAI_API_KEY, ELEVENLABS_API_KEY, or MAI_API_KEY + MAI_ENDPOINT + MAI_TRANSCRIBE_DEPLOYMENT for the selected provider.</td>
+</tr></tbody></table></section><section class="det" id="cap-source_ingest">
+<h3>source_ingest <small>0/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">video_downloader</td>
+<td>yt-dlp</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">python:yt_dlp</span></td>
+<td class="inst">Install yt-dlp: pip install yt-dlp For YouTube support, also install Deno (JS runtime): https://deno.land/#installation Without Deno, YouTube downloads may fail</td>
+</tr></tbody></table></section><section class="det" id="cap-tts">
+<h3>tts <small>0/18 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">azure_tts</td>
+<td>azure</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set your Azure AI Speech credentials (same resource as azure_stt): export AZURE_SPEECH_KEY=your_speech_resource_key export AZURE_SPEECH_REGION=eastus # your Spe</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">cartesia_tts</td>
+<td>cartesia</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:CARTESIA_API_KEY</span></td>
+<td class="inst">Configure CARTESIA_API_KEY from the Cartesia dashboard.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">dashscope_tts</td>
+<td>dashscope</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set DASHSCOPE_API_KEY to your Alibaba Cloud DashScope API key. Get one at https://dashscope.aliyun.com/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">doubao_tts</td>
+<td>doubao</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set DOUBAO_SPEECH_API_KEY to a Volcengine Doubao Speech API Key. Optional: set DOUBAO_SPEECH_VOICE_TYPE to the default speaker voice. Use the new console API ke</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">elevenlabs_tts</td>
+<td>elevenlabs</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the ELEVENLABS_API_KEY environment variable: export ELEVENLABS_API_KEY=your_key_here Get a key at https://elevenlabs.io If fal_elevenlabs_tts is available,</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">fal_elevenlabs_tts</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Set FAL_KEY to a fal.ai API key. No separate ElevenLabs key is needed. Get a fal.ai key at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">fish_audio_tts</td>
+<td>fish_audio</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FISH_AUDIO_API_KEY</span></td>
+<td class="inst">Set FISH_AUDIO_API_KEY to an API key from https://fish.audio/go-api/api-keys/ Create voice models in the fish.audio playground and pass their id as reference_id</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">gemini_tts</td>
+<td>gemini</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Configure Gemini credentials and google-genai &gt;= 2.25.0.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">google_tts</td>
+<td>google_tts</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Auth option A — TTS-only API key: set GOOGLE_TTS_API_KEY. GOOGLE_API_KEY or GEMINI_API_KEY remain supported for broader Google setups. Google Cloud API key with</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">grok_tts</td>
+<td>grok</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:XAI_API_KEY</span></td>
+<td class="inst">Configure XAI_API_KEY from https://console.x.ai/.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">heygen_catalog_tts</td>
+<td>heygen</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:HEYGEN_API_KEY</span></td>
+<td class="inst">Configure HEYGEN_API_KEY; use a catalog voice from /v3/voices.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">heygen_tts</td>
+<td>heygen</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:HEYGEN_API_KEY</span></td>
+<td class="inst">Configure HEYGEN_API_KEY from https://platform.heygen.com/api-keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">inworld_tts</td>
+<td>inworld</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:INWORLD_API_KEY</span></td>
+<td class="inst">Configure INWORLD_API_KEY with the Base64 credential from the Inworld Portal.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">kling_tts</td>
+<td>kling_official</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:KLING_API_KEY</span></td>
+<td class="inst">Set KLING_API_KEY in .env for the official Kling API. Pass voice_id explicitly; OpenMontage does not guess Kling voice IDs.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">mai_tts</td>
+<td>microsoft_mai</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set your Azure AI Speech credentials (same resource as azure_stt): export AZURE_SPEECH_KEY=your_speech_resource_key export AZURE_SPEECH_REGION=eastus # your Spe</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">mistral_tts</td>
+<td>mistral</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:MISTRAL_API_KEY</span></td>
+<td class="inst">Configure MISTRAL_API_KEY from https://console.mistral.ai/.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">openai_tts</td>
+<td>openai</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the OPENAI_API_KEY environment variable: export OPENAI_API_KEY=your_key_here Get a key at https://platform.openai.com/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">piper_tts</td>
+<td>piper</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">cmd:piper</span></td>
+<td class="inst">Install Piper TTS: pip install piper-tts Or download from https://github.com/rhasspy/piper/releases Then download a voice model: piper --download-dir ~/.piper/m</td>
+</tr></tbody></table></section><section class="det" id="cap-video_generation">
+<h3>video_generation <small>0/33 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">seedance_ark</td>
+<td>ark</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ARK_API_KEY</span></td>
+<td class="inst">Set ARK_API_KEY to the API Key body from Volcengine Ark (without the &#x27;Bearer &#x27; prefix). Optional: ARK_SEEDANCE_MODEL and ARK_BASE_URL.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">atlas_video</td>
+<td>atlascloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ATLASCLOUD_API_KEY</span></td>
+<td class="inst">Set ATLASCLOUD_API_KEY to your Atlas Cloud API key. Get one at https://www.atlascloud.ai/ -&gt; Dashboard -&gt; API Keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">wan_atlas_video</td>
+<td>atlascloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:ATLASCLOUD_API_KEY</span></td>
+<td class="inst">Configure ATLASCLOUD_API_KEY.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">cogvideo_video</td>
+<td>cogvideo</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Enable local video generation and install the diffusers stack: export VIDEO_GEN_LOCAL_ENABLED=true uv pip install diffusers transformers accelerate torch pillow</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">comfyui_video</td>
+<td>comfyui</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Start a ComfyUI server and set COMFYUI_SERVER_URL (default http://localhost:8188). Bundled local WAN requires WAN 2.2 models and LightX2V LoRAs. Local MiniMax H</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">flux3_video</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">h3_max_video</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">vidu_video</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">wan_fal_video</td>
+<td>fal.ai</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Configure FAL_KEY using https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">gemini_omni_fal</td>
+<td>gemini_omni</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Set FAL_KEY (or FAL_AI_API_KEY) from https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">gemini_omni_video</td>
+<td>gemini_omni</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set GEMINI_API_KEY or GOOGLE_API_KEY to a Google AI Studio API key. Get one at https://aistudio.google.com/apikey Gemini Omni Flash is paid-tier only (no free t</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">grok_video</td>
+<td>grok</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set XAI_API_KEY to your xAI API key. Get one from the xAI developer console</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">heygen_video</td>
+<td>heygen</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the HEYGEN_API_KEY environment variable: set HEYGEN_API_KEY=your_key_here Get a key at https://app.heygen.com/settings/api</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">higgsfield_video</td>
+<td>higgsfield</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set HIGGSFIELD_API_KEY and HIGGSFIELD_API_SECRET for your Higgsfield Cloud credentials. Get them at https://cloud.higgsfield.ai/api-keys Alternatively, set HIGG</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">hunyuan_video</td>
+<td>hunyuan</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Enable local video generation and install the diffusers stack: export VIDEO_GEN_LOCAL_ENABLED=true uv pip install diffusers transformers accelerate torch pillow</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">hunyuan_cloud_video</td>
+<td>hunyuan_cloud</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:TENCENT_TOKENHUB_API_KEY</span></td>
+<td class="inst">Set TENCENT_TOKENHUB_API_KEY to your Tencent Cloud TokenHub API key. Get it at https://console.cloud.tencent.com/tokenhub</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">kling_video</td>
+<td>kling</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set FAL_KEY to your fal.ai API key. Get one at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">kling_official_video</td>
+<td>kling_official</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:KLING_API_KEY</span></td>
+<td class="inst">Set KLING_API_KEY in .env for the official Kling API. Optionally set KLING_API_BASE_URL to override the default Singapore endpoint.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">ltx_api_video</td>
+<td>ltx</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:LTX_API_KEY</span></td>
+<td class="inst">Configure LTX_API_KEY from https://console.ltx.io.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">ltx_video_local</td>
+<td>ltx</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Enable local video generation and install the diffusers stack: export VIDEO_GEN_LOCAL_ENABLED=true uv pip install diffusers transformers accelerate torch pillow</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">ltx_video_modal</td>
+<td>ltx-modal</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set the MODAL_LTX2_ENDPOINT_URL environment variable to your deployed LTX endpoint: set MODAL_LTX2_ENDPOINT_URL=https://&lt;your-modal-endpoint&gt;</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">minimax_fal_video</td>
+<td>minimax</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:FAL_KEY</span></td>
+<td class="inst">Set FAL_KEY (or FAL_AI_API_KEY) from https://fal.ai/dashboard/keys.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">minimax_video</td>
+<td>minimax</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:MINIMAX_API_KEY</span></td>
+<td class="inst">Set MINIMAX_API_KEY to your MiniMax API key. Get one at https://platform.minimax.io/ (global) or https://platform.minimaxi.com/ (CN). Optionally set MINIMAX_REG</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">sora_video</td>
+<td>openai</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set OPENAI_API_KEY to your OpenAI API key with Sora API access. pip install &#x27;openai&gt;=2.44.0&#x27;</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">pexels_video</td>
+<td>pexels</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set PEXELS_API_KEY to your Pexels API key. Get one free at https://www.pexels.com/api/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">pixabay_video</td>
+<td>pixabay</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set PIXABAY_API_KEY to your Pixabay API key. Get one free at https://pixabay.com/api/docs/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">wan_replicate_video</td>
+<td>replicate</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:REPLICATE_API_TOKEN</span></td>
+<td class="inst">Configure REPLICATE_API_TOKEN.</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">runway_video</td>
+<td>runway</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set RUNWAY_API_KEY to your Runway API secret. Get one at https://dev.runwayml.com/</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">seedance_replicate</td>
+<td>seedance</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set REPLICATE_API_TOKEN to your Replicate API token. Get one at https://replicate.com/account/api-tokens</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">seedance_video</td>
+<td>seedance</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Set FAL_KEY to your fal.ai API key. Get one at https://fal.ai/dashboard/keys</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">veo_video</td>
+<td>veo</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Configure at least one backend API key: - Direct Google backend: Configure Vertex AI service-account credentials. Get a key at https://aistudio.google.com/ Or s</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">jimeng_video</td>
+<td>volcengine</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:VOLC_ACCESSKEY</span><span class="dep">env:VOLC_SECRETKEY</span></td>
+<td class="inst">Set VOLC_ACCESSKEY and VOLC_SECRETKEY to your Volcengine IAM credentials. Get them at https://console.volcengine.com/iam/keymanage Ensure your account has acces</td>
+</tr><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">wan_video</td>
+<td>wan</td>
+<td><span class="rt"></span></td>
+<td><span class="dim">-</span></td>
+<td class="inst">Enable local video generation and install the diffusers stack: export VIDEO_GEN_LOCAL_ENABLED=true uv pip install diffusers transformers accelerate torch pillow</td>
+</tr></tbody></table></section><section class="det" id="cap-voice_conversion">
+<h3>voice_conversion <small>0/1 ready</small></h3>
+<table class="m"><thead><tr><th></th><th>tool</th><th>provider</th><th>runtime</th><th>missing</th><th>how to fix</th></tr></thead>
+<tbody><tr class="">
+<td><span class="tag off">need setup</span></td>
+<td class="tname">heygen_voice_convert</td>
+<td>heygen</td>
+<td><span class="rt"></span></td>
+<td><span class="dep">env:HEYGEN_API_KEY</span></td>
+<td class="inst">Configure HEYGEN_API_KEY; use an ACTIVE workspace instant voice.</td>
+</tr></tbody></table></section>
+
+<footer>
+生成时间 2026-10-29 16:23 · 机器 NVIDIA GB10 / Node v22.23.4 / FFmpeg 6.1.1 · 数据内嵌、无网络依赖 ·
+本 HTML 为快照交付物，过期后按第 5 节验证命令重新采集重建。
+</footer>
+</body></html>
