@@ -182,8 +182,17 @@ class PexafyImage(BaseTool):
             if not image_url:
                 return ToolResult(success=False, error="Pexafy result has no usable URL")
 
-            image_response = requests.get(image_url, timeout=60)
-            image_response.raise_for_status()
+            # Origin CDNs (Unsplash/Pixabay) TLS-flake intermittently —
+            # retry the download itself, matching retry_policy.
+            for attempt in range(3):
+                try:
+                    image_response = requests.get(image_url, timeout=60)
+                    image_response.raise_for_status()
+                    break
+                except (requests.exceptions.SSLError, requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                    if attempt == 2:
+                        raise
+                    time.sleep(1.5 * (attempt + 1))
 
             output_path = Path(
                 inputs.get("output_path", f"pexafy_{photo.get('photo_id', 'image')}.jpg")
